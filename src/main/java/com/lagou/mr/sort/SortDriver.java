@@ -14,6 +14,11 @@ import java.io.IOException;
 
 public class SortDriver {
 
+    /**
+     * file文件和执行结果保存在了resources/work目录下，
+     * 因为不知道怎么指定resource目录作为Path，
+     * 因此直接在本地环境执行完成后，将结果放在了resource目录下
+     */
     public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
         final Configuration configuration = new Configuration();
         final Job job = Job.getInstance(configuration);
