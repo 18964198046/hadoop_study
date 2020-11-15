@@ -1,0 +1,92 @@
+question 3:
+
+
+question 3.1:
+
+1. 解题思路:
+(1) 通过first_value和over函数，根据id分组，并获取到用户浏览的开始时间
+(2) 通过unix_stamp函数, 计算出用户总共浏览的时长
+(3) 通过id对用户分组，通过max和count函数统计处用户最长的浏览时间和点击网页的次数
+
+2. SQL语句:
+select id, max(diff) duration, count(1) count
+from
+    (select
+        id, browseid,
+        ((unix_timestamp(dt, 'yyyy/MM/dd HH:mm') - unix_timestamp(begin, 'yyyy/MM/dd HH:mm')) / 60) diff
+    from
+        (select
+            id, dt, browseid,
+            first_value(dt) over(partition by id order by dt) begin
+        from t3 order by id, dt) tmp1
+    ) tmp2
+group by id;
+
+
+3. 执行结果:
+id	duration	count
+022f86d4533740ad914f233cbd9c4430	51.0	8
+307d9dce3b7f495ab8ad6033f8c54930	650.0	17
+32258fe7130844399859aec54b6df5ff	162.0	13
+80ea80b2e5a64cbebfaf34aa797125f0	51.0	5
+934e8bee978a42c7a8dbb4cfa8af0b4f	104.0	13
+95273392ab1a4579914273cdd1f3a3ae	1242.0	19
+de0096ad04ec4273b0462c7da7d79653	658.0	17
+f5ae36c6cdda40d5954e08a2d14954a7	40.0	6
+Time taken: 21.218 seconds, Fetched: 8 row(s)
+
+
+
+question 3.2:
+
+1. 解题思路:
+(1) 根据id对数据进行分组，并根据dt对分组数据排序
+(2) 通过lag函数错行计算每个分组中浏览记录时间的间隔，单位为分钟
+(3) 通过case函数对diff列进行处理，超过30分钟的diff值，重置为0
+(4) 通过case函数对feature列进行计算，对于超过30分钟的feature = 0，否则为1
+(5) 使用over函数，对feature列进行求和，求和结果作为gid
+(6) 根据id和gid进行分组求和计数，得出浏览的时长和步长
+
+
+2. SQL语句:
+select
+    id, sum(diff) duration, count(*) step
+from
+    (select
+        id, dt, diff, feature, sum(feature) over(order by id, dt) gid
+    from
+        (select
+            id, dt,
+            case when diff > 30 then 0
+                 else diff end diff,
+            case when diff <= 30 then 0
+                 else 1 end feature
+        from
+            (select
+                id, dt,
+                cast((unix_timestamp(dt, 'yyyy/MM/dd HH:mm') - unix_timestamp(nvl(lag(dt) over(partition by id order by dt), dt), 'yyyy/MM/dd HH:mm')) / 60 as int) diff
+            from
+                t3
+            order by
+                id, dt) tmp1
+        ) tmp2
+    ) tmp3
+group by id, gid
+
+
+3. 执行结果:
+id	duration	step
+022f86d4533740ad914f233cbd9c4430	51	8
+307d9dce3b7f495ab8ad6033f8c54930	45	8
+307d9dce3b7f495ab8ad6033f8c54930	56	9
+32258fe7130844399859aec54b6df5ff	46	6
+32258fe7130844399859aec54b6df5ff	41	7
+80ea80b2e5a64cbebfaf34aa797125f0	51	5
+934e8bee978a42c7a8dbb4cfa8af0b4f	32	6
+934e8bee978a42c7a8dbb4cfa8af0b4f	35	7
+95273392ab1a4579914273cdd1f3a3ae	40	10
+95273392ab1a4579914273cdd1f3a3ae	44	9
+de0096ad04ec4273b0462c7da7d79653	53	8
+de0096ad04ec4273b0462c7da7d79653	45	9
+f5ae36c6cdda40d5954e08a2d14954a7	40	6
+Time taken: 5.047 seconds, Fetched: 13 row(s)

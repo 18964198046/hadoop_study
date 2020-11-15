@@ -1,0 +1,82 @@
+question 2:
+
+1. 解题思路:
+(1) 通过ID和Time对原数据进行分组排序
+(2) 通过lag和lead函数分别向前向后错开一行, 生成lagprice和leadprice数据
+(3) 通过case函数，判断price大于lagprice并且大于leadprice的数据为波峰，price小于lagprice并且小于leadprice的为波谷
+
+
+2. SQL语句
+select
+    id, time, price, feature
+from
+    (select
+        id, time, price,
+        case when price > lagprice and price > leadprice then '波峰'
+             when price < lagprice and price < leadprice then '波谷'
+             else '未知' end feature
+    from
+        (select
+            id, time, stamp, price,
+            nvl(lag(price) over(partition by id order by stamp), 0) lagprice,
+            nvl(lead(price) over(partition by id order by stamp), 0) leadprice
+        from
+            (select id, time, unix_timestamp(concat(current_date(), ' ', time), 'yyyy-MM-dd HH:mm') stamp, price from t2) tmp1
+        order by
+            id, stamp) tmp2
+    ) tmp3
+where feature = '波峰' or feature = '波谷';
+
+
+3. 执行结果:
+id				time		price		feature
+sh66688		9:35		29.48		波峰
+sh66688		9:50		26.75		波谷
+sh66688		9:55		27.13		波峰
+sh66688		10:00		26.3		波谷
+sh66688		10:05		27.09		波峰
+sh66688		10:15		26.11		波谷
+sh66688		10:25		27.49		波峰
+sh66688		10:30		26.7		波谷
+sh66688		10:40		28.26		波峰
+sh66688		10:55		26.48		波谷
+sh66688		11:00		27.41		波峰
+sh66688		11:05		26.7		波谷
+sh66688		11:25		26.35		波谷
+sh66688		13:00		29.45		波峰
+sh66688		13:20		28.2		波谷
+sh66688		13:35		30.45		波峰
+sh66688		13:45		30.17		波谷
+sh66688		13:55		30.75		波峰
+sh66688		14:05		29.61		波谷
+sh66688		14:15		30.79		波峰
+sh66688		14:20		29.82		波谷
+sh66688		14:25		30.09		波峰
+sh66688		14:30		29.61		波谷
+sh66688		14:45		30.88		波峰
+sh66688		14:50		30.73		波谷
+sh66688		14:55		30.76		波峰
+sh88888		9:35		67.23		波峰
+sh88888		9:40		66.56		波谷
+sh88888		10:00		68.34		波峰
+sh88888		10:10		67.35		波谷
+sh88888		10:30		70.62		波峰
+sh88888		10:45		70.29		波谷
+sh88888		11:00		71.13		波峰
+sh88888		11:05		70.24		波谷
+sh88888		11:10		70.37		波峰
+sh88888		11:20		69.73		波谷
+sh88888		13:30		77.22		波峰
+sh88888		13:40		76.9		波谷
+sh88888		13:50		78.75		波峰
+sh88888		13:55		78.3		波谷
+sh88888		14:05		78.99		波峰
+sh88888		14:10		78.35		波谷
+sh88888		14:15		78.37		波峰
+sh88888		14:20		78.07		波谷
+sh88888		14:30		79.78		波峰
+sh88888		14:35		79.72		波谷
+sh88888		14:40		80.71		波峰
+sh88888		14:45		79.92		波谷
+sh88888		14:50		80.49		波峰
+Time taken: 3.906 seconds, Fetched: 49 row(s)

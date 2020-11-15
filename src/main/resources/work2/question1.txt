@@ -1,0 +1,30 @@
+question 1:
+
+1. 解题思路:
+(1) 通过row_number函数生成行号
+(2) 通过year - row_number() 生成gid
+(3) 通过开窗函数对gid进行排序
+(4) 通过count函数统计gid相同的球队连续夺冠的次数，保留夺冠次数大于等于三次的球队
+
+2. SQL语句:
+select distinct team
+from
+    (select
+        gid, team, count(*) count
+    from
+        (select
+            team, year,
+            (year - row_number() over(partition by team order by year)) gid
+        from t1) tmp1
+    group by
+        gid, team) tmp2
+where count >= 3;
+
+
+3. 执行结果:
+team
+公牛
+湖人
+Time taken: 52.645 seconds, Fetched: 2 row(s)
+
+
