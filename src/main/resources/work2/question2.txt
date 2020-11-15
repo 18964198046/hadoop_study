@@ -29,7 +29,7 @@ where feature = '波峰' or feature = '波谷';
 
 
 3. 执行结果:
-id				time		price		feature
+id			time		price		feature
 sh66688		9:35		29.48		波峰
 sh66688		9:50		26.75		波谷
 sh66688		9:55		27.13		波峰
