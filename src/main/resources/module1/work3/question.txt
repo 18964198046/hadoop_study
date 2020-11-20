@@ -1,0 +1,50 @@
+question:
+
+1. 解题思路:
+(1) 根据user_id对数据进行分组，并根据click_time对分组数据排序
+(2) 通过lag函数错行计算每个分组中浏览记录时间的间隔，单位为分钟
+(4) 通过case函数对feature列进行计算，对于超过30分钟的feature = 0，否则为1
+(5) 使用over函数，对feature列进行求和，求和结果作为gid
+(6) 根据user_id和click_time进行分组, 并通过row_number计算出行号
+
+
+2. SQL语句:
+select
+    user_id, click_time,
+    row_number() over(partition by user_id, gid order by click_time) row_num
+from
+    (select
+        user_id, click_time, lag_click_time, duration, feature,
+        sum(feature) over(order by user_id, click_time) gid
+     from
+        (select
+            user_id, click_time, lag_click_time, duration,
+            case when duration <= 30 then 0
+                 else 1 end feature
+         from
+            (select
+                user_id, click_time, lag_click_time,
+                cast((unix_timestamp(click_time, 'yyyy-MM-dd HH:mm:ss') - unix_timestamp(lag_click_time, 'yyyy-MM-dd HH:mm:ss')) / 60 as int) duration
+             from
+                (select
+                    user_id, click_time,
+                    nvl(lag(click_time) over(partition by user_id order by click_time), click_time) lag_click_time
+                 from
+                     user_clicklog
+                ) tmp1
+            ) tmp2
+         ) tmp3
+     ) tmp4
+
+
+3. 执行结果:
+user_id	    click_time	            row_num
+A	        2020-05-15 01:30:00	    1
+A	        2020-05-15 01:35:00	    2
+A	        2020-05-15 02:00:00	    3
+A	        2020-05-15 03:00:10	    1
+A	        2020-05-15 03:05:00	    2
+B	        2020-05-15 02:03:00	    1
+B	        2020-05-15 02:29:40	    2
+B	        2020-05-15 04:00:00	    1
+Time taken: 4.409 seconds, Fetched: 8 row(s)
