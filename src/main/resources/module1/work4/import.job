@@ -1,0 +1,3 @@
+type=command
+click_date=$(date -d "1 day ago" +%Y%m%d)
+command=/opt/lagou/servers/hive-2.3.7/bin/hive -hivevar click_date='${click_date}' -f 'test.sql'

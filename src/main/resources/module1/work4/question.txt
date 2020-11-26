@@ -1,0 +1,22 @@
+我使用azkaban遇到一个问题:
+    我将目录下的import.job和test.sql打包发不到azkaban上执行，返回执行日志:
+    26-11-2020 00:36:28 CST import INFO - Assigned executor : linux123:12321
+    26-11-2020 00:36:28 CST import INFO - Running execid:7 flow:import project:4 version:2
+    26-11-2020 00:36:28 CST import INFO - Updating initial flow directory.
+    26-11-2020 00:36:28 CST import INFO - Fetching job and shared properties.
+    26-11-2020 00:36:28 CST import INFO - Starting flows
+    26-11-2020 00:36:28 CST import INFO - Running flow 'import'.
+    26-11-2020 00:36:28 CST import INFO - Configuring Azkaban metrics tracking for jobrunner object
+    26-11-2020 00:36:28 CST import INFO - Submitting job 'import' to run.
+    26-11-2020 00:36:28 CST import INFO - Created file appender for job import
+    26-11-2020 00:36:28 CST import INFO - Attached file appender for job import
+    26-11-2020 00:36:28 CST import INFO - Job Started: import
+    26-11-2020 00:36:28 CST import INFO - No attachment file for job import written.
+    26-11-2020 00:36:28 CST import INFO - Job import finished with status FAILED in 0 seconds
+    26-11-2020 00:36:28 CST import INFO - Setting import to FAILED_FINISHING
+    26-11-2020 00:36:28 CST import INFO - Setting flow '' status to FAILED in 0 seconds
+    26-11-2020 00:36:28 CST import INFO - Finishing up flow. Awaiting Termination
+    26-11-2020 00:36:28 CST import INFO - Finished Flow
+    26-11-2020 00:36:28 CST import INFO - Setting end time for flow 7 to 1606322188272
+
+    您看的出是什么原因导致的吗？
