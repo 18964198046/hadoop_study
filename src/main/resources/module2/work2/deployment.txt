@@ -1,0 +1,60 @@
+部署流程:
+
+# 1.安装git
+$ yum install -y git
+
+# 2.安装相关依赖
+$ yum install -y gcc gcc-c++ zlib zlib-devel openssl openssl-devel pcre pcre-devel
+
+# 3.kafka的客户端源码
+$ cd /opt/lagou/software
+$ git clone https://github.com/edenhill/librdkafka
+
+# 4.编译
+$ cd /opt/lagou/software/librdkafka
+$ ./configure
+$ make && make install
+
+# 5.修复librdkafka的so文件无法找到问题
+$ echo "/usr/local/lib" >> /etc/ld.so.conf
+$ ldconfig
+
+# 6.安装
+$ cd /opt/lagou/software
+$ wget http://nginx.org/download/nginx-1.18.0.tar.gz
+
+# 7.解压
+$ tar -zxf nginx-1.18.0.tar.gz
+$ mv nginx-1.18.0 /opt/lagou/servers/nginx-1.18.0
+
+# 8.下载模块源码
+$ cd /opt/lagou/software
+$ git clone https://github.com/brg-liuwei/ngx_kafka_module
+
+# 9.编译
+$ cd /opt/lagou/servers/nginx-1.18.0
+$ ./configure --add-module=/opt/lagou/software/ngx_kafka_module/
+$ make && make install
+
+# 10.编写html文件
+详见目录下的index.html文件
+
+# 11.配置nginx
+详见目录下的nginx.conf文件
+
+# 12.启动nginx服务
+/usr/local/nginx/sbin/nginx -c /opt/lagou/servers/nginx-1.18.0/conf/nginx.conf
+
+# 13.访问网站
+访问: http://linux121:8880
+页面截图: 详见目录下的index_html.png
+输入用户名，选择公司，点击按钮发送请求!
+
+# 14.监听kafka并获取到推送消息
+kafka-console-consumer.sh --bootstrap-server linux123:9092 --topic tp_individual --from-beginning
+推送结果详见目录下的kafka-consumer.png文件
+
+
+
+
+

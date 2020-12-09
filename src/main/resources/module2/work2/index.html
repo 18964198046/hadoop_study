@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1,shrink-to-fit=no">
+        <title>index</title>
+        <!-- jquery -->
+        <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.js"></script>
+        <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+        <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    </head>
+    <body>
+        <div class="row">
+            <div class="col-lg-3">
+                <div class="input-group username-input-group">
+                    <span class="input-group-addon" id="basic-addon1">用户名:</span>
+                    <input id="username" type="text" class="form-control" placeholder="Username" aria-describedby="basic-addon1"/>
+                    <div class="input-group-btn">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> 
+                            <span class="company" code="">公司</span>
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href="#" code="ali" onclick="selectCompany(this)">阿里</a></li>
+                            <li><a href="#" code="jd" onclick="selectCompany(this)">京东</a></li>
+                            <li><a href="#" code="byte_dance" onclick="selectCompany(this)">字节跳动</a></li>
+                            <li><a href="#" code="bilibili" onclick="selectCompany(this)">哔哩哔哩</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>   
+            <div class="col-lg-2">
+                <div class="btn-group action-button-group" role="group" aria-label="...">
+                    <button type="button" class="btn btn-default" onclick="operate('click')">点击</button>
+                    <button type="button" class="btn btn-default" onclick="operate('job_collect')">收藏</button>
+                    <button type="button" class="btn btn-default" onclick="operate('cv_send')">投简历</button>
+                    <button type="button" class="btn btn-default" onclick="operate('cv_upload')">上传简历</button>
+                </div>
+            </div>
+        </div>
+    </body>
+
+    <script>
+
+        function selectCompany(option) {
+            console.log(option.text);
+            console.log($(option).attr("code"));
+            $(".company").text(option.text);
+            $(".company").attr("code", $(option).attr("code"))
+        }
+
+        function operate(action) {
+            var username = $("#username").val();
+            var companycode = $(".company").attr("code");
+            if (username == "" || username == undefined) {
+                alert("请输入用户名!");
+                return;
+            }
+            if (companycode == "" || companycode == undefined) {
+                alert("请选择公司!");
+                return;
+            }
+            var json = {'user_id': username, 'act_time': current().toString(), 'action': action, 'job_code': companycode};
+            console.log(json);
+            $.ajax({
+                url:"http://linux121:8880/kafka/topic/tp_individual",
+                type:"POST" ,
+                crossDomain: true,
+                data: JSON.stringify(json),
+                xhrFields: {
+                    withCredentials: true
+                },
+                success:function (data, status, xhr) {
+                    console.log("操作成功：'" + action)
+                },
+                error:function (err) {
+                    console.log(err.responseText);
+                }
+            });
+        };
+
+        function current() {
+            var d   = new Date(),
+                str = '';
+            str += d.getFullYear() + '-';
+            str += d.getMonth() + 1 + '-';
+            str += d.getDate() + ' ';
+            str += d.getHours() + ':';
+            str += d.getMinutes() + ':';
+            str += d.getSeconds();
+            return str;
+        }
+    </script>
+
+</html>
