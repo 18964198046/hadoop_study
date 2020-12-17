@@ -1,0 +1,58 @@
+解题步骤：
+
+1. 创建数据表
+drop table if exists dws.dws_continue_three_day_active_member;
+create table dws.dws_continue_three_day_active_member (`device_id` string) COMMENT 'continue_three_day' PARTITIONED BY (`dt` string) stored as parquet;
+
+2. 编写数据脚本
+#! /bin/bash
+
+source /etc/profile
+
+# 可以输入日期;如果未输入日期取昨天的时间
+if [ -n "$1" ]
+then
+    do_date=$1
+else
+    do_date=`date -d "-1 day" +%F`
+fi
+
+sql="
+insert overwrite table dws.dws_continue_three_day_active_member partition(dt='$do_date')
+select
+    device_id
+from
+    (select
+        device_id, gid, count(1) amount
+     from
+        (select
+            device_id, dt,
+            (number - row_number() over (partition by device_id order by dt)) gid
+         from
+            (select
+                device_id, dt,
+                cast(regexp_replace(dt,'-','') as int) number
+             from dws.dws_member_start_day
+             where dt >= date_add(next_day('$do_date', 'mo'), -7)
+               and dt <= '$do_date'
+            ) tmp1
+       ) tmp2
+     group by device_id, gid
+     having amount >= 3
+   ) tmp3;
+"
+
+hive -e "$sql"
+
+3. 查看执行结果
+select device_id from dws.dws_continue_three_day_active_member limit 10;
+1FB872-9A100400000
+1FB872-9A100400001
+1FB872-9A100400002
+1FB872-9A100400003
+1FB872-9A100400004
+1FB872-9A100400005
+1FB872-9A100400006
+1FB872-9A100400007
+1FB872-9A100400008
+1FB872-9A100400009
