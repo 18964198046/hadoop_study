@@ -83,7 +83,8 @@ create temporary function lagou_date_type as "cn.lagou.dw.hive.udf.DateType";
 
 select
     count(1) order_amount,
-    sum(totalmoney) total_money_amount
+    sum(totalmoney) total_money_amount,
+    date_type
 from
     (select distinct
         orderid,
