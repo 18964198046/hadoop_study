@@ -1,0 +1,52 @@
+question2: 在会员分析中计算沉默会员数和流失会员数
+           沉默会员的定义：只在安装当天启动过App，而且安装时间是在7天前
+           流失会员的定义：最近30天未登录的会员
+
+question2.1: 统计沉默会员, 只在安装当天启动过App，而且安装时间是在7天前
+
+思路:
+(1) 用户成为会员的当日，一定登陆一次，因此可以使用dws.dws_member_start_day来获取用户首次登陆日期
+(2) 从首次登陆起开始，7天内用户总共的登陆次数，如果总登陆次数只有一次，代表用户只在安装当天启动过APP，
+    而在之后的一周内没有再登陆过，因此可以归类为沉默会员
+
+select
+    device_id,
+    uid,
+    num
+from
+    (select
+        A.device_id,
+        A.uid,
+        (count(1) over(partition by A.device_id)) num
+    from dwd.dwd_start_log A
+    left join
+        (select
+            device_id,
+            dt as start_day,
+            date_add(dt, 7) as end_day
+        from dws.dws_member_start_day) B
+    on A.device_id = B.device_id and A.dt >= B.start_day and A.dt <= B.end_day) C
+where num = 1;
+
+
+question2.2: 统计流失会员, 最近30天未登录的会员
+
+思路:
+(1) 通过dws.dws_start_log来获取注册超过30天的会员
+(2) 计算会员最近30天内的登陆次数，次数等于0次，则归类为流失会员
+
+select
+    device_id,
+    uid
+from
+    (select
+        device_id,
+        uid,
+        (count(1) over(partition by device_id)) num
+    from dwd.dwd_start_log
+    where datediff(from_unixtime(unix_timestamp(),'yyyy-MM-dd'), dt) > 30) A
+where num = 0;
+
+
+
+

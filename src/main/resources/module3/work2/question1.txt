@@ -1,0 +1,101 @@
+question1: 用拉链表实现核心交易分析中DIM层商家维表，并实现该拉链表的回滚
+
+(1) 数据说明
+使用了ods.ods_trade_shops表中的数据，构建DIM层商家维表。
+ods.ods_trade_shops表中包含了2020-07-01、2020-07-12，两个分区的数据。
+
+(2) 创建商家维表
+DROP TABLE dim.dim_trade_shops;
+CREATE TABLE dim.dim_trade_shops(
+    shopid INT,
+    shopname STRING,
+    shoplevel TINYINT,
+    status TINYINT,
+    createtime STRING,
+    modifiedtime STRING,
+    start_date STRING,
+    end_date STRING
+)
+row format delimited fields terminated by ',';
+
+(3) 全量初始化
+insert overwrite table dim.dim_trade_shops
+select
+    shopid,
+    shopname,
+    shoplevel,
+    status,
+    createtime,
+    modifytime as modifiedtime,
+    createtime as start_date,
+    '9999-12-31' as end_date
+from ods.ods_trade_shops
+where dt='2020-07-01';
+
+说明: 将ods.ods_trade_shops表中2020-07-01分区数据全量导入dim.dim_trade_shops表中。
+
+(4) 增量抽取
+insert overwrite table dim.dim_trade_shops
+select
+    shopid,
+    shopname,
+    shoplevel,
+    status,
+    createtime,
+    modifytime as modifiedtime,
+    createtime as start_date,
+    '9999-12-31' as end_date
+from ods.ods_trade_shops
+where dt='2020-07-12'
+
+union all
+
+select
+    A.shopid,
+    A.shopname,
+    A.shoplevel,
+    A.status,
+    A.createtime,
+    A.modifytime,
+    A.start_date,
+    case when B.shopid is not null and A.end_date>'2020-07-12'
+         then '2020-07-12'
+         else A.end_date
+    end end_date
+from dim.dim_trade_shops A
+     left join (select * from ods.ods_trade_shops where dt='2020-07-12') B
+     on A.shopid = B.shopid;
+
+说明: 增量导入2020-07-12分区的数据，并修改end_date日期
+
+(5) 数据回滚
+insert overwrite table dim.dim_trade_shops
+select
+    shopid,
+    shopname,
+    shoplevel,
+    status,
+    createtime,
+    modifiedtime,
+    start_date,
+    end_date
+from dim.dim_trade_shops
+where end_date < '2020-07-10'
+
+union all
+
+select
+    shopid,
+    shopname,
+    shoplevel,
+    status,
+    createtime,
+    modifiedtime,
+    start_date,
+    '9999-12-31'end_date
+from dim.dim_trade_shops
+where start_date<='2020-07-10' and end_date > '2020-07-10';
+
+说明: 因为目前只有2020-07-12和2020-07-01的数据，当回滚到2020-07-10时，所有数据的end_date均回滚到9999-12-31
+
+
